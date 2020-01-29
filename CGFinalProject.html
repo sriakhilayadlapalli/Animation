@@ -1,0 +1,860 @@
+<!DOCTYPE html>
+<html>
+  <head>
+  <title>Three.js GLTF Importer</title>
+  <script src="./three.js"></script>
+  <script src="./OrbitControls.js"></script>
+  <script src="./KeyboardState.js"></script>
+  <script src="./GLTFLoader.js"></script>
+
+<!-- Adapted from code from https://discoverthreejs.com/book/first-steps/load-models/ -->
+
+  <script>
+    var scene, camera, renderer; // Three.js rendering basics
+
+    var canvas; // The canvas on which the image is rendered
+
+    var mouse;  // Used to navigate the scene with the mouse
+    var keyboard = new KeyboardState();
+    var clock = new THREE.Clock(); 
+    var startTime = clock.getElapsedTime();
+    var lamp;
+    var circle2;
+
+    var keyframes = [
+    [0, -15, -4, 6.349, 1.12, -2.159, -1],
+    [0.1,-17, 1, 6.523, 1.08, -1.98, -1],
+    [0.2, -18, 1.4, 6.834, 0.92, -1.56, -1],
+    [0.3, -15, 2, 7.149, 0.76, -1.33, -1],
+    [0.4, -16, 2.3, 6.867, 0.84, -1.09, -1],
+    [0.5, -17, 3, 5.439, 0.92, -1.02, -1],
+    [0.6, -17, 3.5, 6.243, 0.45, -1.23, -1],
+    [0.7, -18, 3.8, 6.576, 0.33, -1.36, -1],
+    [0.8, -19, 4, 7.139, 0.28, -1.4, -1],
+    [0.9, -16, 2.4, 6.823, 0.78, -1.986, -1],
+    [1, -15, -4, 6.349, 1.12, -2.159, -1],
+];
+
+
+    /*var keyframes = [
+    [0, -20, 0, 0, -0.3, -0.8, -1.98],
+    [0.3, -20, 0, 0, -0.3, -0.8, -1.48],
+    [0.7, -20, 0, 0, -0.3, -0.8, -1.2599],
+    [0.85, -20, 0, 0, -0.3, -0.8, -0.9299]
+    [1, -20, 0, 0, -0.3, -0.8, -0.7855]]; */
+
+
+    var keyframes1 = [
+    [0, -10,-2.5,0,10,-2.5,0.25],
+    [0.1,-5,-0.5,-1,5,-0.5,-0.25],
+    [0.2,0,-2.8,-2,2,-2.8,-0.75],
+    [0.3,5,2.5,-1,-5,2.5,0.25],
+    [0.5,10,0,0,-10,0,1.25],
+    [0.6,5,2.5,1,-5,2.5,2.25],
+    [0.8,0,-2.8,-2,0,-2.8,-0.75],
+    [0.9,-5,2.5,1,5,2.5,2.25],
+    [1,-10,-2.5,0,10,-2.5,1.25]];
+
+    var keyframes2=[
+    [0.2,-10,-2.5,0],
+    [0.3,-5,-0.5,-1],
+    [0.4,0,-2.8,-2]];
+
+    var keyframes3 = [
+    [0,7,32,36],
+    [0.1,3,28,40],
+    [0.3,0,28,30],
+    [0.5,-6,35,23],
+    [0.6,-4,28,28],
+    [0.7,0,32,32],
+    [0.8,2,39,25],
+    [1,0,28,36]];
+
+    var keyframes4 = [
+    [0, -10,-1.9,2,10,-2.5,1],
+    [0.1,-8,-0.3,1,5,-0.5,-0.5],
+    [0.2,-3,-2.5,0,2,-2.8,-1],
+    [0.3,2,2.2,1,-5,2.5,0],
+    [0.5,5,0,2,-10,0,1],
+    [0.6,0,2.2,3,-5,2.5,2],
+    [0.8,-5,-2.5,0,0,-2.8,-1],
+    [0.9,-8,2.2,3,5,2.5,2],
+    [1,-10,-1.9,2,-2.5,1]];
+
+
+    
+
+    var base, lowerArm, upperArm, shade; 
+
+
+    var cat; // Blender model
+
+    var texLoader;  // Texture loader
+
+
+    var sofaFlag = false;
+    var pillarFlag = false;
+    var camFlag = false;
+    var projFlag = false;
+    var manFlag = false;
+    var catFlag = false;
+
+
+
+    var eyeLight;
+
+    // Load Blender gltf/glb models and add to scene
+    function loadModels()
+    {
+        const loader = new THREE.GLTFLoader();
+        const url = './sofa1.glb';
+        const url2 = './pillar.glb';
+        const url3 = './camera.glb';
+        const url4 = './man1.glb';
+        const url5 = './projector.glb';
+        const url6 = './cat.glb';
+
+
+        // function to execute when model has been loaded 
+        function onLoad ( gltf ) {
+            //console.log( gltf.scene);
+            //console.log( gltf.scene.children);
+            sofa = gltf.scene;
+
+            sofa.scale.set(0.4, 0.4, 0.4);
+
+            scene.add(sofa);
+
+            sofaFlag = true;  // the rocket object has been loaded
+        }       
+
+        function onLoad2 ( gltf ){
+
+            pillar = gltf.scene;
+
+//            var podiumMesh = pillar.children[2];
+
+            pillar.scale.set(0.09, 0.06, 0.1);
+            pillar.position.z= -8;
+            pillar.position.y=-3.8;
+
+            scene.add(pillar);
+
+            pillarFlag = true;
+
+        }
+
+        function onLoad3 ( gltf ){
+
+            cam = gltf.scene;
+
+            cam.scale.set(0.3, 0.6, 0.6);
+            cam.position.z= -6;
+            cam.position.y= 15.8;
+            cam.position.x = -9;
+
+            //camera.rotation.z = -1.6;
+
+            scene.add(cam);
+
+            camFlag = true;
+
+        }
+
+        function onLoad4 ( gltf ){
+
+            man = gltf.scene;
+
+            man.scale.set(0.06, 0.05, 0.1);
+            man.position.z= -3;
+            man.position.y= -1.3;
+            man.position.x= 5;
+
+            scene.add(man);
+
+            manFlag = true;
+
+        }
+        function onLoad5 ( gltf ){
+
+            proj = gltf.scene;
+
+            proj.scale.set(0.3, 0.3, 0.3);
+            proj.position.z= -6;
+            proj.position.y= 4.2;
+            proj.position.x= 0.85;
+            proj.rotation.y= 2.3;
+
+            scene.add(proj);
+
+            projFlag = true;
+
+        }
+
+        function onLoad6 ( gltf ){
+
+            cat = gltf.scene;
+
+            cat.scale.set(0.5, 0.3, 0.3);
+            cat.position.z= 5;
+            cat.position.y=-2;
+            cat.position.x= 8;
+
+            scene.add(cat);
+
+            catFlag = true;
+
+        }
+
+        loader.load(url, onLoad);
+        loader.load(url2, onLoad2);
+        loader.load(url3, onLoad3);
+        loader.load(url4, onLoad4);
+        loader.load(url5, onLoad5);
+        loader.load(url6, onLoad6);
+
+
+
+    }
+
+
+
+
+    // Create a camera, sitting on the positive z-axis.  The camera is not part of the scene
+    function createCamera() {
+        camera = new THREE.PerspectiveCamera(45, canvas.width/canvas.height, 0.1, 500);
+        camera.position.set(0,28,44);
+
+        // Add orbit control to allow the camera orbit around
+        mouse = new THREE.OrbitControls(camera, renderer.domElement);
+    }
+
+    function createBase(radius, height)
+    {
+        var base = new THREE.Object3D();
+
+        var mat = new THREE.MeshPhongMaterial( { color: "gray" } );
+
+        // SphereGeometry(radius, horizSeg, vertSeg, horizStartAng, horizLenAngle, vertStartAng, vertLenAng )
+        var geom = new THREE.SphereGeometry(radius, 32, 32, 0, 2*Math.PI, 0, Math.PI/2 );
+        var mesh = new THREE.Mesh(geom, mat);
+        mesh.scale.y = height/radius;
+        mesh.position.y = -height;
+        base.add(mesh);
+
+        // CircleGeometry(radius, segments) 
+        var capGeom = new THREE.CircleGeometry(radius, 32);
+        var capMesh = new THREE.Mesh(capGeom, mat);
+        capMesh.rotation.x = Math.PI / 2;
+        mesh.add(capMesh);
+
+        return base; 
+    }
+
+    // Create a lamp arm with specified radius and height
+    function createArm(radius, height)
+    {
+
+        var arm = new THREE.Object3D();
+
+        var mat = new THREE.MeshPhongMaterial( { color: "skyblue" } );
+
+        var texLoader = new THREE.TextureLoader();
+        var shadeTexture = texLoader.load("marble.jpg");
+        var shadeMaterial = new THREE.MeshPhongMaterial( { map: shadeTexture , side: THREE.DoubleSide} );
+
+        // CylinderGeometry(radiusTop, radiusBottom, height) 
+        var geom = new THREE.CylinderGeometry(radius, radius, height, 64, 64);
+        var mesh = new THREE.Mesh(geom, shadeMaterial);
+        //mesh.position.x += 2.5;
+        mesh.position.y += height/2;
+        arm.add(mesh);
+
+        return arm;
+    }
+
+    /*function createArm1(radius, height)
+    {
+
+        var arm = new THREE.Object3D();
+
+        var mat = new THREE.MeshPhongMaterial( { color: "skyblue" } );
+
+        // CylinderGeometry(radiusTop, radiusBottom, height) 
+        var geom = new THREE.CylinderGeometry(radius, radius, height, 64, 64);
+        var mesh = new THREE.Mesh(geom, mat);
+        mesh.position.y += height/2 -3;
+        arm.add(mesh);
+
+        return arm;
+    }*/
+
+    // Create the lamp shade with specified radius and height
+    function createShade(radius, height)
+    {
+        var shade = new THREE.Object3D();
+
+        var mat = new THREE.MeshPhongMaterial( { color: 0xFF7F50, side: THREE.DoubleSide } ); // both sides colored
+
+        var texLoader = new THREE.TextureLoader();
+        var shadeTexture = texLoader.load("uni.jpg");
+        var shadeMaterial = new THREE.MeshPhongMaterial( { map: shadeTexture , side: THREE.DoubleSide} );
+
+         // ConeGeometry(radius, height, radialSeg, heightSeg, open?) 
+        var geom = new THREE.ConeGeometry(radius, height, 16, 1, true);
+        var mesh = new THREE.Mesh(geom, shadeMaterial);
+        mesh.position.y += height/2;
+        mesh.rotation.z = Math.PI;
+        shade.add(mesh);        
+
+        // TODO Step 4: add a spotlight
+
+        // SpotLight (color, intensity)
+        var spotLight = new THREE.SpotLight("white", 0.8); 
+
+        // set spotlight position, direction and angle
+        spotLight.position.set(0, 0, 0);            // position, relative to parent shade
+        spotLight.target.position.set(0,height,0);  // direction, relative to parent shade
+        spotLight.angle = Math.atan(radius/height); // to match the shade angle 
+        spotLight.penumbra = 0.1;                   // outer 10% of spotlight cone fades out
+
+        // add both spotlight and its target to the scene
+        shade.add(spotLight);
+        shade.add(spotLight.target);
+
+        return shade;
+    }
+
+    function createBackground(length, width, height)
+    {
+        var background = new THREE.Object3D(); 
+
+        var material = new THREE.MeshPhongMaterial({color: 0xCCAAAA, side: THREE.DoubleSide}); 
+
+
+
+        var texLoader = new THREE.TextureLoader();
+        var shadeTexture = texLoader.load("b1.jpg");
+
+        shadeTexture.wrapS=THREE.repeatWrapping;
+        shadeTexture.wrapT=THREE.repeatWrapping;
+        shadeTexture.repeat.set(3,3);
+        var shadeMaterial = new THREE.MeshPhongMaterial( { map: shadeTexture , side: THREE.DoubleSide} );
+        // create ground
+        var geom = new THREE.PlaneGeometry(length, width); 
+        var ground = new THREE.Mesh( geom, shadeMaterial);
+        ground.rotation.x = Math.PI/2;
+        background.add(ground);
+
+        // TODO: create walls or patio or soccer field or ...
+
+        return background;
+
+    }
+
+    function createScene()
+    {
+
+        // create an AudioListener and add it to the camera
+    
+        renderer.setClearColor(0); // Set background color (0, or 0x000000, is black).
+        scene = new THREE.Scene(); // Create a new scene which we can add objects to.
+        texLoader = new THREE.TextureLoader(); // used to create the parts below
+
+        // load Blender gltf/glb model
+        loadModels();
+
+        base = createBase(1.5, 1.2);
+        //lowerArm = createArm(0.25, 5);
+        upperArm = createArm(0.25, 3);
+        shade = createShade(1.5, 2);
+
+        lamp = new THREE.Object3D();
+        scene.add(lamp);        // add lamp as a child of the entire scene
+        /*lamp.add(base);         // add base as a child of lamp    
+        lamp.add(lowerArm);     // add lowerArm as a child of lamp (not base, base can rotate independently)
+        lowerArm.add(upperArm); // add upperArm as a child of lowerArm
+        upperArm.add(shade);*/
+
+        lamp.add(upperArm);
+
+        upperArm.add(shade);
+
+        //base.position.y += -2.7;
+        //lowerArm.position.y += -2.5;
+          upperArm.position.y += 5;
+        shade.position.y += 3;
+
+        // rotate lamp parts
+          //lowerArm.rotation.z -= 0.3;
+          upperArm.rotation.z -= 0.5;
+        shade.rotation.z -= 1;
+
+        //lamp.position.x = 5.5;
+
+        // position lamp in the scene
+        //lamp.position.set(-25, -4, 0);
+        lamp.rotation.y = -0.25;
+
+        base2 = createBase(1.5, 1.2);
+        //lowerArm = createArm(0.25, 5);
+        upperArm2 = createArm(0.25, 3);
+        shade2 = createShade(1.5, 2);
+
+
+        lamp2 = new THREE.Object3D();
+        scene.add(lamp2);
+        lamp2.add(upperArm2);
+        upperArm2.add(shade2);
+        upperArm2.position.y += 5;
+        shade2.position.y += 3;
+        upperArm2.rotation.z += 0.5;
+        shade2.rotation.z -= 1;
+        lamp2.rotation.y = -0.25;
+
+
+
+
+            
+
+        // add sky
+       /* var texLoader = new THREE.TextureLoader(); 
+        var skyTexture = texLoader.load("sky.jpg");
+        var skyMat = new THREE.MeshPhongMaterial( { map: skyTexture, side: THREE.DoubleSide});
+        var geom = new THREE.PlaneGeometry(100, 100); 
+        var sky = new THREE.Mesh( geom, skyMat);
+        sky.position.z = -20;
+        scene.add(sky); */
+
+        /*var geometry=new THREE.TorusGeometry(1.5,0.25,16,32)
+        var material=new THREE.MeshPhongMaterial({color:"red"})
+        var torusMesh=new THREE.Mesh(geometry,material);
+        torus=new THREE.Object3D();
+        torus.add(torusMesh)
+        scene.add(torus);*/
+
+        var geometry=new THREE.SphereGeometry(0.85,0.5,8)
+        var material=new THREE.MeshPhongMaterial({color:"blue"})
+        var texLoader = new THREE.TextureLoader();
+        var shadeTexture = texLoader.load("bb.jpeg");
+        var shadeMaterial = new THREE.MeshPhongMaterial( { map: shadeTexture , side: THREE.DoubleSide} );
+        var circleMesh=new THREE.Mesh(geometry,shadeMaterial);
+        circle1=new THREE.Object3D();
+        circle1.add(circleMesh)
+        scene.add(circle1);
+
+        /*var geometry2=new THREE.SphereGeometry(0.85,0.5,8)
+        var material2=new THREE.MeshPhongMaterial({color:"blue"})
+        var texLoader2 = new THREE.TextureLoader();
+        var shadeTexture2 = texLoader.load("disco.jpg");
+        var shadeMaterial2 = new THREE.MeshPhongMaterial( { map: shadeTexture2 , side: THREE.DoubleSide} );
+        var circleMesh2=new THREE.Mesh(geometry2,shadeMaterial2);
+        circle2=new THREE.Object3D();
+        circle2.add(circleMesh2)
+        scene.add(circle2);*/
+
+
+
+
+       /* var texLoader = new THREE.TextureLoader();
+        var shadeTexture = texLoader.load("house.jpg");
+        var shadeMaterial = new THREE.MeshPhongMaterial( { map: shadeTexture , side: THREE.DoubleSide} );
+        var torusMesh=new THREE.Mesh(geometry,shadeMaterial);
+        torus=new THREE.Object3D();
+        torus.add(torusMesh)
+        scene.add(torus);
+
+        var geometry=new THREE.SphereGeometry(1,0.5,8)
+        var material=new THREE.MeshPhongMaterial({color:"blue"})
+
+
+        var texLoader = new THREE.TextureLoader();
+        var shadeTexture = texLoader.load("house.jpg");
+        var shadeMaterial = new THREE.MeshPhongMaterial( { map: shadeTexture , side: THREE.DoubleSide} );
+        var circleMesh=new THREE.Mesh(geometry,shadeMaterial);
+        circle=new THREE.Object3D();
+        circle.add(circleMesh)
+        scene.add(circle); 
+
+
+
+        var geometry=new THREE.SphereGeometry(1,0.5,8)
+        var material=new THREE.MeshPhongMaterial({color:"blue"}) 
+
+
+        var texLoader = new THREE.TextureLoader();
+        var shadeTexture = texLoader.load("house.jpg");
+        var shadeMaterial = new THREE.MeshPhongMaterial( { map: shadeTexture , side: THREE.DoubleSide} );
+        var circleMesh=new THREE.Mesh(geometry,shadeMaterial);
+        circle=new THREE.Object3D();
+        circle.add(circleMesh)
+        scene.add(circle); */
+
+        var background = createBackground(44, 44, 20);
+        background.position.y -= 3.8+0.01;
+        scene.add(background);
+
+        var mainwall = new THREE.Object3D();
+        var shadeTexture1 = texLoader.load("church.jpg");
+        var shadeMaterial1 = new THREE.MeshPhongMaterial({ map: shadeTexture1, side: THREE.DoubleSide });
+        var geom1 = new THREE.PlaneGeometry(44, 44);
+        var mesh1 = new THREE.Mesh(geom1, shadeMaterial1);
+        mesh1.rotation.x= Math.PI / 2;
+        mesh1.rotation.z= Math.PI / 2;
+        mainwall.add(mesh1);
+           mainwall.position.y += 18;
+           mainwall.position.z-=20;
+           mainwall.rotation.x= Math.PI / 2;
+           mainwall.rotation.y= -Math.PI / 2;
+        scene.add(mainwall);
+        scene.add(background);
+
+        var sidewall = new THREE.Object3D();
+           var shadeTexture2 = texLoader.load("bbm1.jpg");
+            var shadeMaterial2 = new THREE.MeshPhongMaterial({ map: shadeTexture2, side: THREE.DoubleSide });
+           var geom2 = new THREE.PlaneGeometry(44, 44);
+           var mesh2 = new THREE.Mesh(geom2, shadeMaterial2);
+           mesh2.rotation.y= Math.PI/2;
+          mesh2.rotation.x= Math.PI / 2;
+            mesh2.rotation.z= Math.PI / 2;
+
+            sidewall.add(mesh2);
+           // wall.add(upperArm);
+           sidewall.position.y += 18;
+           sidewall.position.x +=22;
+           sidewall.rotation.x= Math.PI / 2;
+            scene.add(sidewall);
+            scene.add(background);
+
+            var sidewall3 = new THREE.Object3D();
+           var shadeTexture3 = texLoader.load("grad.jpg");
+            var shadeMaterial3 = new THREE.MeshPhongMaterial({ map: shadeTexture3, side: THREE.DoubleSide });
+           var geom3 = new THREE.PlaneGeometry(44, 44);
+           var mesh3 = new THREE.Mesh(geom3, shadeMaterial3);
+           mesh3.rotation.y= Math.PI/2;
+          mesh3.rotation.x= Math.PI / 2;
+            mesh3.rotation.z= Math.PI / 2;
+
+            sidewall3.add(mesh3);
+           // wall.add(upperArm);
+           sidewall3.position.y += 18;
+           sidewall3.position.x -=22;
+           sidewall3.rotation.x= Math.PI / 2;
+            scene.add(sidewall3);
+            //scene.add(background);
+
+            var topwall = new THREE.Object3D();
+            var topTexture = texLoader.load("sky.jpg");
+            var topwallMaterial = new THREE.MeshPhongMaterial({ map: topTexture, side: THREE.DoubleSide });
+            var topGeom = new THREE.PlaneGeometry(40, 40);
+            var topMesh = new THREE.Mesh(topGeom, topwallMaterial);
+            topMesh.rotation.x = Math.PI / 2;
+            topwall.add(topMesh);
+            topwall.position.y += 40;
+            scene.add(topwall);
+
+        var geometry = new THREE.PlaneGeometry( 100, 100); 
+        var material = new THREE.MeshPhongMaterial({color: 0xCCAAAA, side: THREE.DoubleSide});
+        /*var plane = new THREE.Mesh( geometry, material );
+        scene.add( plane );
+        plane.position.y -= 4+0.01;
+        plane.rotation.x = Math.PI/2;*/
+
+    /*   var listener = new THREE.AudioListener();
+    camera.add( listener );
+
+    // create a global audio source
+    var sound = new THREE.Audio( listener );
+
+    // load a sound and set it as the Audio object's buffer
+    var audioLoader = new THREE.AudioLoader();
+    audioLoader.load( 'grad.ogg', function( buffer ) {
+        sound.setBuffer( buffer );
+        sound.setLoop( true );
+        sound.setVolume( 0.5 );
+        sound.play();
+    });
+    <a href="http://127.0.0.1:8887/lab11.html">Click for sound</a>*/
+
+   
+
+    /*document.querySelector('button').addEventListener('click', function() {
+            context.resume().then(() => {
+                console.log('Playback resumed successfully');
+  });
+});*/
+
+
+
+    }
+
+
+    // add lights to the scene
+    function createLights()
+    {
+        // add an ambient light
+        const ambColor = 0xFFFFFF;
+        const ambIntensity = 0.5;
+        const ambLight = new THREE.AmbientLight(ambColor, ambIntensity);
+        scene.add(ambLight);
+
+        // Step 2.1: add a directional light to shine in the direction the camera faces
+        // DirectionalLight (color, intensity)
+        eyeLight = new THREE.DirectionalLight( "white", 0.8 );   
+        eyeLight.position.set(camera.position.x,camera.position.y,camera.position.z);  // shines down the z-axis
+        scene.add(eyeLight);
+
+
+        // Step 2.2: add a dim light shining from above
+        // DirectionalLight (color, intensity)
+        var topLight = new THREE.DirectionalLight( "white", 0.8 ); 
+        topLight.position.set(0,1,0);
+        scene.add( topLight );
+    }
+
+    function update() {
+        mouse.update();
+        keyboard.update();
+        eyeLight.position.set(camera.position.x, camera.position.y, camera.position.z );
+
+
+        if ( keyboard.down("left") ) {
+            // rotate arm clockwise
+            upperArm.rotation.z -= 0.01;
+        }
+        if ( keyboard.down("right") ) {
+            // rotate arm counter-clockwise
+            upperArm.rotation.z += 0.01;
+        }
+        if ( keyboard.pressed("down") ) {
+            // rotate lowerArm clockwise
+            lowerArm.rotation.z -= 0.01;
+        }
+        if ( keyboard.pressed("up") ) {
+            // rotate lowerArm counter-clockwise
+            lowerArm.rotation.z += 0.01;
+        }
+        if ( keyboard.pressed("Z") ) {
+            base.rotation.z -= 0.01;
+
+            // TODO rotate base clockwise
+        }
+        if ( keyboard.pressed("X") ) {
+            base.rotation.z += 0.01;
+
+            // TODO rotate base counter-clockwise
+        }
+
+        // TODO: add rotation for shade
+        if ( keyboard.pressed("A") ) {
+            shade.rotation.z -= 0.01;
+        }
+        if ( keyboard.pressed("K") ) {
+            shade.rotation.z += 0.01;
+        }
+
+        // TODO: print keyframe parameters when user hits 'p'
+        if ( keyboard.pressed("P") ) {
+  // print keyframe parameters
+            console.log(base.rotation.z);
+            console.log(lowerArm.rotation.z);
+            console.log(upperArm.rotation.z);
+            console.log(shade.rotation.z);
+        }
+    }
+    
+
+    //var angle = 0.1;
+    var angle = 0.8;
+    function render() {
+
+        requestAnimationFrame( render );
+
+        var time = clock.getElapsedTime();
+
+        var keys = keyframeInterp(keyframes, 35, time);
+        lamp.position.x = -19;
+        lamp.position.y = 6;
+        lamp.position.z = -12;
+        shade.rotation.z =keys[1];
+        shade.rotation.y=keys[2];
+
+        //var keys1 = keyframeInterp(keyframes2, 30, time);
+
+
+        lamp2.position.x = 19;
+        lamp2.position.y = 6;
+        lamp2.position.z = -12;
+        shade2.rotation.z =keys[0];
+        shade2.rotation.y=keys[2];
+
+
+
+          //lamp.position.x=keys[0];
+          //lamp.position.y=keys[1];
+          //base.rotation.z=keys[2];
+          //lowerArm.rotation.z=keys[3];
+         /* upperArm.rotation.z=keys[4];
+          shade.rotation.z=keys[5];*/
+
+
+        /* var keys1 = keyframeInterp(keyframes1, 30, clock.getElapsedTime());
+          torus.position.x = keys1[0];
+          torus.position.y = keys1[1]; */
+
+          var keys2 = keyframeInterp(keyframes1, 35, time);
+
+          var elapsedTime = time - startTime;
+
+          circle1.position.x = keys2[0];
+          circle1.position.y = keys2[2];
+          circle1.position.z = keys2[1];
+
+          //var keys3 = keyframeInterp(keyframes2, 30, time);
+         /* circle2.position.x = keys2[3];
+          circle2.position.y = keys2[4];
+          circle2.position.z = keys2[5]; */
+
+          var keys3 = keyframeInterp(keyframes3, 35, time);
+
+          camera.position.x = keys3[0];
+          camera.position.y = keys3[1];
+          camera.position.z = keys3[2]; 
+
+          //var cat;
+          if(catFlag){
+
+          var keys4 = keyframeInterp(keyframes4, 35, time);
+          cat.position.x = keys4[0];
+          cat.position.y = keys4[2];
+          cat.position.z = keys4[1];
+      }
+
+
+
+
+
+
+
+        mouse.update();
+        eyeLight.position.set(camera.position.x,camera.position.y,camera.position.z);  // shines down the z-axis
+
+        if(sofaFlag) {
+            sofa.position.x = 8;
+            sofa.position.z = -12;
+            sofa.position.y = -3.7;
+            //rocket.position.z
+            //sofa.rotation.set(0, angle, 0);
+            //sofa.rotation.x = Math.PI/2;
+            //sofa.rotation.z = angle;
+            //angle += 0.01;
+        }
+
+        if(camFlag) {
+
+            cam.position.z= -6;
+            //cam.position.y= 29.8;
+            cam.position.x = -9;
+
+            
+
+            cam.rotation.y += 0.01;
+
+            //rocket.position.x = 6*Math.cos(angle);
+            //rocket.position.z = 6*Math.sin(angle);
+            //fan.rotation.set(Math.PI/2, 0, angle);
+            //fan.rotation.x = Math.PI;
+            //fan.rotation.z = angle;
+            //angle += 0.01;
+        }
+
+        if(manFlag){
+            man.position.z = -5;
+            //man.position.z += 0.03;
+            man.position.y = -1.3;
+            man.position.x = 5;
+            man.rotation.y += 0.003;
+
+        }
+        if(projFlag){
+            proj.rotation.y += 0.002;
+        }
+        if(catFlag){
+            cat.rotation.y +=0.001;
+        }
+
+
+        renderer.render(scene, camera);
+        mouse.update();
+
+
+    }
+
+    function keyframeInterp(keyframes, cycleTime, currentTime) {
+
+    var keys=[];  // array of interpolated values
+    var nKeys = keyframes[0].length-1;  // number of keys
+
+    // find time elapsed within the current cycle and scale to [0,1]
+    var time = ((currentTime - startTime) % cycleTime) / cycleTime; 
+    
+    // find the next keyframe based on time
+    for (var i = 0; i < keyframes.length; i++) {
+        if (time < keyframes[i][0]) break;
+    }
+    i = i-1; // previous keyframe is at index i-1
+
+    // scale interpolation parameter t to interval [0,1]
+    var t = (time - keyframes[i][0]) / (keyframes[i+1][0] - keyframes[i][0]); 
+    
+    // linear interpolation between keyframes i and i+1 
+    for(var j = 1; j <= nKeys; j++)
+        keys.push((1-t) * keyframes[i][j] + t * keyframes[i+1][j]); 
+
+    return keys;
+}
+
+
+    function main() {
+
+        try {
+            canvas = document.getElementById("glcanvas");
+            renderer = new THREE.WebGLRenderer( { canvas: canvas, antialias: true} );
+        }
+        catch (e) {
+            document.getElementById("canvas-holder").innerHTML = "<h3><b>WebGL is not available.</b><h3>";
+            return;
+        }
+
+        renderer.gammaOutput = true;
+        renderer.gammaFactor = 1.5;
+
+       // create camera
+        createCamera();
+        
+        // create scene 
+        createScene();
+
+        // create lights 
+        createLights();
+
+        // render scene
+        render();
+
+        
+    }
+  </script>
+
+</head>
+<body onload="main()">
+   <audio controls="" style="float: right;">
+  
+    <source src="gradsong.mp3" type="audio/mpeg">
+  Your browser does not support the audio element.
+  </audio>
+<div id="canvas-holder">
+    <canvas id="glcanvas" width="600" height="400"></canvas>
+</div>
+</body>
+</html>
+
